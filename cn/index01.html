@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="format-detection" content="telephone=no">
+	
+	<link rel="stylesheet" href="../css/reset.css">
+	<script src="../js/zepto.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/fx.js" type="text/javascript" charset="utf-8"></script>
+	<title>破坏王</title>
+	<style type="text/css">
+		html {
+			height: 100%;
+			width: 100%;
+			background: url("../images/bg1.png");
+			background-size: 100% 100%;
+		}
+		.main{
+			position:relative;
+			margin:0 auto;
+			width:100%;
+			height:600px;
+			overflow:hidden;
+		}
+		.container{
+			position:absolute;
+			top:-640px;
+			width:100%;
+			height:600px;
+		}
+		.container{
+			position:absolute;
+			top:-640px;
+			width:100%;
+			height:600px;
+		}
+		.row{
+			height:120px;
+		}
+		.left{
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.right {
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.l {
+			background: url("../images/t-left.png") no-repeat center bottom;
+			background-size: 100% auto;
+		}
+		.r {
+			background: url("../images/t-right.png") no-repeat center bottom;
+			background-size: 100% auto;
+		}
+		.tree {
+			float:left;
+			width:30%;
+			height:120px;
+			background: brown;
+		}
+		.atmosphere {
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.peo-box {
+			position: absolute;
+			left: 0px;
+			top: 500px;
+			width: 100%;
+			height: 140px;
+		}
+		.peo {
+			position: relative;
+			width: 35%;
+			height: 120px;
+			background-color: yellow;
+			z-index: 2;
+		}
+		.sco {
+			position: fixed;
+			top: 30px;
+			left: 50%;
+			margin-left: -50px;
+			width: 100px;
+			height: 60px;
+			font-size: 30px;
+			font-weight: bold;
+			text-align: center;
+			line-height: 60px;
+			z-index: 5;
+		}
+		.destroy-box {
+			overflow: hidden;
+			position: fixed;
+			left: 0px;
+			top: 500px;
+			width: 100%;
+			height:130px;
+		}
+		.destroy-box div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 67%;
+			height: 120px;
+			z-index: 6;
+		}
+		.under-box {
+			position: fixed;
+			left: 35%;
+			top: 570px;
+			width: 30%;
+			height: 50px;
+		}
+		.under {
+			position: absolute;
+			width: 116%;
+			left: -10%;
+			height: 50px;
+			background: url("../images/un-tree.png") no-repeat center bottom;
+			background-size: 100%;
+		}
+	</style>
+</head>
+<body>
+	<div class="sco">0</div>
+	<div class="main" id="main">
+		<div class="container" id="container">
+		</div>
+		<div class="bg-con">
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+		</div>
+	</div>
+	<div class="peo-box">
+		<div class="peo" id="peo"></div>
+	</div>
+	<div class="under-box">
+		<div class="under"></div>
+	</div>
+	<div class="destroy-box"></div>
+	<script type="text/javascript">
+	// 设置视口
+	var deviceWidth = $(window).width();
+	var deviceHeight = $(window).height();
+	var viewportHeight = 680;
+	var viewportWidth = Math.floor(deviceWidth / deviceHeight * viewportHeight);
+	$("meta").after('<meta name="viewport" content="width=' + viewportWidth + ',height='+ viewportHeight + ', user-scalable=no">');
+		function Block(dom){
+			this.dom = dom;
+			this.peo = document.getElementById("peo");
+			this.peo.posi = 1;
+			this.topPos = -640;
+			this.step = 1;
+			this.clock = null;
+			this.state = true;
+			this.check = 1;
+			this.sum = 0;
+			this.sco = 0;
+			this.tree = 5;
+			addEventListener('touchstart', function(e) {
+				if (e.touches[0].clientX >= viewportWidth/2) {
+					// 点击右边时
+					$(".peo").css({
+						"float" : "right"
+					})
+					this.peo.posi = 2;
+				}
+				if (e.touches[0].clientX < viewportWidth/2) {
+					// 点击左边时
+					$(".peo").css({
+						"float" : "left"
+					})
+					this.peo.posi = 1;
+				}
+			});
+		}
+
+		Block.prototype.init = function(){
+			var _t = this;
+			for(var i = 0;i < 5;i++){
+				_t.insertRow();
+			}
+			_t.start();
+		};
+		
+		Block.prototype.insertRow = function(){
+			var oRow = this.createCell('row');
+			var classArr = this.classArr();
+			oRow.place = place;
+			var oCell = null;
+			for(var i = 0; i < 3; i++){
+				oCell = this.createCell(classArr[i]);
+				oRow.appendChild(oCell);
+			}
+			var firChild = this.dom.firstChild;
+			this.dom.insertBefore(oRow , firChild);
+		};
+		
+		Block.prototype.delRow = function(){
+			this.dom.removeChild(this.dom.childNodes[this.dom.childNodes.length - 1]);
+		};
+		var place = null;
+		Block.prototype.classArr = function(){
+			if (this.check == 1) {
+				var arr = ['left', 'tree', 'right'];
+				var i = Math.floor(Math.random() * 2);
+				if (i == 1) {
+					arr[i + 1] += ' r';
+					place = 2;
+				} else {
+					arr[i] += ' l';
+					place = 1;
+				}
+				this.check = 2;
+				return arr;
+			} else {
+				var arr = ['atmosphere', 'tree', 'atmosphere'];
+				this.check = 1;
+				place = null;
+				return arr;
+			}
+		};
+	
+		Block.prototype.createCell = function(className){
+			var oDiv = document.createElement('div');
+			if (className == "tree") {
+				if (this.tree == 1) {
+					this.tree = 5;
+				};
+				oDiv.style.background = "url('../images/tree_01.png')";
+				oDiv.style.backgroundSize = "100% 100%"  
+			};
+			oDiv.className = className;
+			return oDiv;
+		};
+	
+		Block.prototype.judge = function(){
+			if(this.topPos >= 0){
+				this.topPos = -120;
+				this.dom.style.height = '750px';
+				this.dom.style.top = this.topPos + 'px';
+				this.insertRow();
+				this.delRow();
+				if (this.check == 1) {
+					this.sco++;
+					$(".sco").html(this.sco);
+					this.step = this.step + 0.01;
+				};
+			}
+		};
+		Block.prototype.judgeBoom = function() {
+			if ($("#container").children().eq(4)[0].place == this.peo.posi) {
+				// console.log("当前：" + $("#container").children().eq(4)[0].place);
+				// console.log("位置：" + this.peo.posi);
+				this.end();
+				alert('你输了');
+				
+			};
+
+		}
+		Block.prototype.move = function(){
+			var speed = null;
+			// switch(true) {
+			// 	case :;break;
+			// 	case :;break;
+			// 	case :;break;
+			// 	case :;break;
+			// 	case :;break;
+			// }
+			this.topPos += this.step;
+			this.dom.style.top = this.topPos + 'px';
+			if (this.topPos > -100 && this.topPos < 0) {
+				if (this.topPos > -5 && $("#container").children().eq(4)[0].place) {
+					if ($("#container").children().eq(4)[0].place == 1) {
+						this.destroyBox("left");
+					} else {
+						this.destroyBox("right");
+					}
+					$("#container").children().eq(4).children().remove();
+				} else if (this.topPos > -5) {
+					if (this.peo.posi == 1) {
+						this.destroyBox("not-l");
+					} else {
+						this.destroyBox("not-r");
+					}
+					$("#container").children().eq(4).children().remove();
+				}
+				this.judgeBoom();
+			}
+		};
+	
+		Block.prototype.start = function(){
+			var _t = this;
+			_t.clock = setInterval(function(){
+				_t.move();
+				_t.judge();
+			}, 3);
+		};
+		Block.prototype.destroyBox = function(dir) {
+			// var fat = document.querySelector(".destroy-box");
+			$(".destroy-box").html("<div></div>");
+			if (dir == "left") {
+				// 左分数
+				$(".destroy-box > div").last().css({
+					"background" : "url('../images/go-left.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").last().animate({
+					"rotateZ" : '-10deg',
+					"translateX" : '-600px',
+					"opacity" : "0"
+				}, 500 - this.step * 40, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else if(dir == "right") {
+				// 右树枝
+				$(".destroy-box > div").last().css({
+					"left" : "35%",
+					"background" : "url('../images/go-right.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").last().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '600px',
+					"opacity" : "0"
+				}, 500 - this.step * 40, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else if(dir == "not-l") {
+				// 没树枝 左飞
+				$(".destroy-box > div").last().css({
+					"width" : "30%",
+					"left" : "35%",
+					"background" : "url('../images/tree_01.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").last().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '600px',
+					"opacity" : "0"
+				}, 500 - this.step * 40, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else {
+				// 没树枝
+				$(".destroy-box > div").last().css({
+					"width" : "30%",
+					"left" : "35%",
+					"background" : "url('../images/tree_01.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").last().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '-600px',
+					"opacity" : "0"
+				}, 500 - this.step * 40, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			}
+		}
+
+		Block.prototype.end = function(){
+			clearInterval(this.clock);
+		};
+		var oContainer = document.getElementById('container');
+		var block = new Block(oContainer);
+		block.init();
+	
+	</script>
+</body>     
+</html>

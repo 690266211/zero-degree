@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="format-detection" content="telephone=no">
+	<link rel="stylesheet" href="../css/reset.css">
+	<script src="../js/zepto.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/fx.js" type="text/javascript" charset="utf-8"></script>
+	<title>破坏王</title>
+	<style type="text/css">
+		html {
+			height: 100%;
+			width: 100%;
+			background-size: 100% 100%;
+		}
+		.main-bg {
+			position: fixed;
+			width: 100%;
+			height: 2800px;
+			top: -2000px;
+			left: 0;
+			background: url("../images/sky.jpg");
+			background-size: 100% auto;
+			background-position: center bottom;
+		}
+		.main{
+			position:relative;
+			margin:0 auto;
+			width:100%;
+			height:600px;
+			overflow:hidden;
+		}
+		.container{
+			position:absolute;
+			top: -120px;
+			width:100%;
+			height:600px;
+		}
+		.row{
+			height:120px;
+		}
+		.left {
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.right  {
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.obstacle {
+			background:#ccc;
+			cursor:pointer;
+		}
+		.tree {
+			float:left;
+			width:30%;
+			height:120px;
+			background: url("../images/tree_01.png") 0 0 no-repeat;
+			-webkit-background-size: 100% 100%;
+			background-size: 100% 100%;
+		}
+		.l {
+			background: url("../images/t-left.png") no-repeat center bottom;
+			background-size: 100% auto;
+		}
+		.r {
+			background: url("../images/t-right.png") no-repeat center bottom;
+			background-size: 100% auto;
+		}
+		.atmosphere {
+			float:left;
+			width:35%;
+			height:120px;
+		}
+		.peo-box {
+			position: absolute;
+			left: 0px;
+			top: 500px;
+			width: 100%;
+			height: 150px;			
+			z-index: 100;
+		}
+		.peo {
+			width: 50%;
+			height: 150px;
+			background: url("../images/role_1.png") center 0px no-repeat;
+		}
+		.timeCon {
+			position: absolute;
+			left: 50%;
+			top: 60px;
+			width: 200px;
+			height: 40px;
+			margin-left: -100px;
+			border-radius: 4px;
+			border: 3px solid #000;
+		}
+		.timeBg {
+			width: 194px;
+			height: 34px;
+			border: 3px solid #e4ea3d;
+			background: #563826;
+		}
+		.time {
+			width: 100%;
+			height: 34px;
+			border-radius: 4px;
+			background: url("../images/time.png") 0 0 repeat-X;
+			-webkit-background-size: 100% 100%;
+			background-size: 100% 100%;
+		}
+		.con div {
+			position: absolute;
+			left: 50px;
+			top: 0;
+			width: 50px;
+			height: 50px;
+			background: #ccc;
+		}
+		.score {
+			position: absolute;
+			left: 50%;
+			top: 130px;
+			height: 50px;
+			width: 100px;
+			margin-left: -50px;
+			line-height: 50px;
+			font-size: 36px;
+			color: #fff;
+			text-align: center;
+		}
+		.destroy-box {
+			overflow: hidden;
+			position: fixed;
+			left: 0px;
+			top: 500px;
+			width: 100%;
+			height:130px;
+		}
+		.destroy-box div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 67%;
+			height: 120px;
+			z-index: 6;
+		}
+		.under-box {
+			position: fixed;
+			left: 35%;
+			top: 570px;
+			width: 30%;
+			height: 50px;
+		}
+		.under {
+			position: absolute;
+			width: 116%;
+			left: -10%;
+			height: 46px;
+			background: url("../images/un-tree.png") no-repeat center bottom;
+			background-size: 100%;
+		}
+		.floor {
+			position: fixed;
+			top: 540px;
+			left: 0px;
+			width: 100%;
+			height: 300px;
+			background: url("../images/floor.png") no-repeat;
+			background-size: 100% auto;
+		}
+	</style>
+</head>
+<body>
+	<div class="main-bg"></div>
+	<div class="floor"></div>
+	<div class="main" id="main">
+		<div class="container" id="container">
+		</div>
+	</div>
+	<div class="peo-box">
+		<div class="peo"></div>
+	</div>
+	<div class="timeCon">
+		<div class="timeBg">
+			<div class="time"></div>
+		</div>
+	</div>
+	<div class="under-box">
+		<div class="under"></div>
+	</div>
+	<div class="destroy-box"></div>
+	<h2 class="score">0</h2>
+	<script type="text/javascript">
+	// 设置视口
+	var deviceWidth = $(window).width();
+	var deviceHeight = $(window).height();
+	var viewportHeight = 700;
+	var viewportWidth = Math.floor(deviceWidth / deviceHeight * viewportHeight);
+
+	$("meta").after('<meta name="viewport" content="width=' + viewportWidth + ',height='+ viewportHeight + ', user-scalable=no">');
+		function Block(dom) {
+			this.dom = dom;//获取容器
+			this.topPos = 0;//容器的top值
+			this.step = 20;//容易位移的速度
+			this.clock = null;//移动计时器
+			this.check = 2;//判断空白
+			this.prevBox = null;
+			this.lastBox = null;
+			this.type = null;//树枝类型
+			this.peoSta = null; //人物位置
+			this.score = 0;//分数
+			this.peoImg = null;//人物打击计时器
+			this.num = 1;//判断左右
+			this.isClick = false;//第一次点击
+			this.isMove = false;//树枝是否飞走
+			this.prevTime = 0;//上一次点击的时间
+			this.combo = 0;//连击次数
+			this.speed = 50;//时间速度
+			this.timer = null;//时间计时器
+			this.imgX = 0;
+			this.isImg = false;
+			this.blackImg = false;
+			this.timeWidth =  $('.time').width();//生命值
+			this.lagTimeWidth = $('.time').width();//最大生命值
+			this.invincible = false;//霸体状态
+			this.bgTrans = 0;
+			var _this = this;
+			addEventListener('touchstart', function(e) {
+			 	_this.isTouch(e.touches[0].clientX);
+			})
+		}
+		// 初始化生成
+		Block.prototype.init = function(){
+			var _this = this;
+			for(var i = 0;i < 6;i++){
+				// 行初始化
+				_this.insertRow();
+			}
+			$(".destroy-box").css({
+				"height" : "120px",
+				"top" : "480px"
+			})
+		};
+		Block.prototype.isTouch = function(clientX) {
+			var _this = this;
+			var t = new Date();
+			// 连击功能
+			if (t.getTime() - this.prevTime <= 250) {
+				this.combo++;
+				// if (this.combo == 5) {
+				// 	this.num = "1_0";
+				// 	this.invincible = true;
+				// 	this.combo = 0;
+				// 	setTimeout(function() {
+				// 		_this.invincible = false;
+				// 		_this.num = _this.num.charAt(0);
+				// 		$(".peo").css({
+				// 			background: "url('../images/role_"+ _this.num +".png') center 0 no-repeat"
+				// 		})
+				// 	}, 5000);
+				// }
+			} else {
+				this.combo--;
+				if (this.combo <=0 ) {
+					this.combo = 0;
+				}
+			}
+			// 250毫秒以内
+			_this.prevTime = t.getTime();
+			if (_this.peoImg) {
+				clearInterval(this.peoImg);
+			}
+			if (clientX >= viewportWidth / 2) {
+				// 点击右边时
+				$(".peo").css({
+					"float" : "right"
+				})
+				$(".peo").css({
+					background: "url('../images/role_2.png') center 0 no-repeat"
+				})
+				if (!this.invincible) {
+					this.num = 2;
+				}
+			};
+			if (clientX < viewportWidth / 2) {
+				// 点击左边时
+				$(".peo").css({
+					"float" : "left",
+				})
+				$(".peo").css({
+					background: "url('../images/role_1.png') center 0 no-repeat"
+				})
+				if (!this.invincible) {
+					this.num = 1;
+				}
+			};
+			// 人物运动
+			this.peoImg = setInterval(function() {
+				_this.peoGif();
+			}, 50)
+
+			this.prevBox = $(".container > div").last().prev().prev()[0].place;
+			this.lastBox = $(".container > div").last().prev()[0].place;
+			this.peoSta = $(".peo").css("float");
+			// 判断是否为无敌状态
+			if (!this.invincible) {
+				if (this.peoSta == this.prevBox || this.peoSta == this.lastBox) {
+					// 游戏结束
+					this.end();
+				} else {
+					// 分数
+					this.score++;
+					if (this.score > 10) {
+						this.speed = 10;
+					}
+					if (this.score > 20) {
+						this.speed = 40;
+					}
+					if (this.score > 30) {
+						this.speed = 20;
+					}
+					$(".score").html(_this.score);
+				}
+			} else {
+				this.score++;
+				$(".score").html(this.score);
+				// 不是无敌状态
+			}
+			setTimeout(function() {
+				if (!_this.isClick) {
+					$(".row").last().children().remove();
+					_this.isClick = true;
+				} else {
+					$(".row").last().prev().children().remove();
+				}
+				if (!_this.isMove) {
+					if (_this.lastBox != null) {
+						_this.destroyBox(_this.lastBox);
+					} else {
+						if (_this.peoSta == "left") {
+							_this.destroyBox("not-l");
+
+						}
+						if (_this.peoSta == "right") {
+							_this.destroyBox("not-r");
+						}
+					}
+					_this.isMove = true;
+				}
+				if (_this.clock) {
+				// 防止计时器叠加
+					clearInterval(_this.clock);
+				}
+				_this.clock = setInterval(function() {
+					_this.move();
+					// 大块移动
+					_this.judge();
+					//大块返回
+				}, 20);
+			}, 100);
+			
+			// 控制时间
+			_this.timeWidth += 4;
+			if (_this.timeWidth >= _this.lagTimeWidth) {
+				_this.timeWidth = _this.lagTimeWidth;
+			}
+			_this.time();
+		}
+		
+		// 添加节点
+		Block.prototype.insertRow = function(){
+			var oRow = this.createCell('row');//创建行节点
+			var classArr = this.classArr();//左右节点
+			var oCell = null;
+			oRow.place = this.type;
+			this.type = null;
+			for(var i = 0; i < 3; i++) {
+				// 每行创建三个小块
+				oCell = this.createCell(classArr[i]);
+				oRow.appendChild(oCell);
+			}
+			var firChild = this.dom.firstChild;
+			this.dom.insertBefore(oRow , firChild);
+		};
+		
+		// 移除节点
+		Block.prototype.delRow = function(){
+			this.dom.removeChild(this.dom.childNodes[this.dom.childNodes.length - 1]);
+		};
+		// 生成树枝
+		Block.prototype.classArr = function() {
+			if (this.check == 1) {
+				var arr = ['left', 'tree', 'right'];
+				var i = Math.floor(Math.random() * 2);
+				if (i == 1) {
+					this.type = arr[i + 1];
+					arr[i + 1] += ' r';
+				} else {
+					this.type = arr[i];
+					arr[i] += ' l';
+				}
+				this.check = 2;
+				return arr;
+			} else{
+				var arr = ['atmosphere', 'tree', 'atmosphere'];
+				this.check = 1;
+				place = 'tree';
+				return arr;
+			}
+		};
+	
+		// 添加类名、创建节点
+		Block.prototype.createCell = function(className) {
+			var oDiv = document.createElement('div');
+			oDiv.className = className;
+			return oDiv;
+		};
+	
+		// 大块回返
+		Block.prototype.judge = function() {
+			if(this.topPos >= 0) {
+				this.topPos = -120;
+				this.dom.style.height = '750px';
+				this.dom.style.top = this.topPos + 'px';
+				this.insertRow();
+				this.delRow();
+				clearInterval(this.clock);
+				this.isMove = false;	
+				this.bgTrans += 3;
+				if (this.bgTrans > 1450) {
+					this.bgTrans = 1450;
+				};
+				$(".main-bg").animate({
+					"translateY" :  this.bgTrans + "px" 
+				}, 100)
+			}
+		};
+		
+		// 容器移动
+		Block.prototype.move = function() {
+			this.topPos += this.step;
+			this.dom.style.top = this.topPos + 'px';
+		};
+		// 打击树木，桩快运动
+		Block.prototype.destroyBox = function(dir) {
+			var fat = document.querySelector(".destroy-box");
+			var newO = document.createElement("div");
+			var firChild = fat.firstChild;
+			fat.insertBefore(newO , firChild);
+			if (dir == "left") {
+				// 左树枝
+				$(".destroy-box > div").first().css({
+					"background" : "url('../images/go-left.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").first().animate({
+					"rotateZ" : '-10deg',
+					"translateX" : '-600px',
+					"background-size" : "100% 100%",
+					"opacity" : "0"
+				}, 500, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else if(dir == "right") {
+				// 右树枝
+				$(".destroy-box > div").first().css({
+					"left" : "35%",
+					"background" : "url('../images/go-right.png') no-repeat",
+					"background-size" : "100% 100%",
+				})
+				$(".destroy-box > div").first().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '600px',
+					"background-size" : "100% 100%",
+				}, 500, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else if(dir == "not-l") {
+				// 没树枝 左飞
+				$(".destroy-box > div").first().css({
+					"width" : "30%",
+					"left" : "35%",
+					"background" : "url('../images/tree_01.png') no-repeat",
+					"background-size" : "100% 100%",
+			})
+				$(".destroy-box > div").first().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '600px',	
+					"background-size" : "100% 100%",
+				}, 500, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			} else {
+				// 没树枝右飞
+				$(".destroy-box > div").first().css({
+					"width" : "30%",
+					"left" : "35%",
+					"background" : "url('../images/tree_01.png') no-repeat",
+					"background-size" : "100% 100%",
+					"opacity" : "1"
+				})
+				$(".destroy-box > div").first().animate({
+					"rotateZ" : '10deg',
+					"translateX" : '-600px',
+					"opacity" : "0",					
+					"background-size" : "100% 100%",
+				}, 500, function() {
+					$(".destroy-box > div").last().remove();
+				});
+			}
+		}
+		// 人物运动
+		Block.prototype.peoGif = function() {
+			if (!this.isImg) {
+				this.imgX -= 150;
+			}
+			if (this.isImg) {
+				this.imgX += 150;
+			}
+			if (this.imgX >= 0) {
+				this.isImg = false;
+				if (this.blackImg) {
+					clearInterval(block.peoImg);
+				}
+			}
+			if (this.imgX <= -300) {
+				this.isImg = true;
+				this.blackImg = true;
+			}
+			$(".peo").css({
+				background: "url('../images/role_" + this.num +".png') center " + this.imgX + "px no-repeat"
+			})
+		}
+
+		Block.prototype.vita = function() {
+			var _this = this;
+			this.timer = setInterval(function() {
+				_this.timeWidth -= 1;
+				if (_this.timeWidth <= 0) {
+					// 时间结束，游戏结束
+					clearInterval(_this.timer);
+					_this.end();
+				}
+				_this.time();
+			}, _this.speed);
+		}
+		Block.prototype.time = function() {
+			$(".time").css({
+				"width" : this.timeWidth
+			})
+		}
+		Block.prototype.end = function() {
+				alert("游戏结束");
+		};
+
+		var oContainer = document.getElementById('container');
+		var block = new Block(oContainer);
+		block.init();
+		block.vita();
+		// clearInterval(block.timer);
+		// block = null;
+	</script>
+</body>
+</html>
